@@ -64,7 +64,7 @@ fprintf('Averaging %d trials.\n', EEG.trials);
 
 %variance weighted average
 if ~isempty(targetfreq)
-    filtEEG = pop_eegfilt(EEG, targetfreq(1)-10, targetfreq(end)+10, [], [0], 0, 0, 'fir1');
+    filtEEG = pop_eegfilt(EEG, targetfreq(1)-10, targetfreq(end)+10, [], [0], 0, 0, 'fir1', 0);
     filtEEG.data = reshape(filtEEG.data,filtEEG.nbchan,filtEEG.pnts,filtEEG.trials);
     trvar = squeeze(var(permute(filtEEG.data,[2 1 3])));
 else
