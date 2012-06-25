@@ -53,9 +53,27 @@ if stimparam.LEST || stimparam.REST
         PsychPortAudio('Close',0);
     end
     
-    audiodevices = PsychPortAudio('GetDevices',3);
-    outdevice = strcmp('DMX 6Fire USB ASIO Driver',{audiodevices.DeviceName});
-    pahandle = PsychPortAudio('Open',audiodevices(outdevice).DeviceIndex,[],[],f_sample,2);
+    if ismac
+        %Mac CoreAudio
+        audiodevices = PsychPortAudio('GetDevices');
+        outdevidx = strcmp('Built-in Output',{audiodevices.DeviceName});
+        outdevice = 'base';
+    elseif ispc
+        audiodevices = PsychPortAudio('GetDevices',3);
+        if ~isempty(audiodevices)
+            %DMX audio
+            outdevidx = strcmp('DMX 6Fire USB ASIO Driver',{audiodevices.DeviceName});
+            outdevice = 'asio';
+        else
+            %Windows default audio
+            audiodevices = PsychPortAudio('GetDevices',2);
+            outdevidx = strcmp('Microsoft Sound Mapper - Output',{audiodevices.DeviceName});
+            outdevice = 'base';
+        end
+    else
+        error('Unsupported OS platform!');
+    end
+    pahandle = PsychPortAudio('Open',audiodevices(outdevidx).DeviceIndex,[],[],f_sample,2);
     
     %construct amplitude modulated wave for left ear
     if stimparam.LEST == 1
@@ -79,7 +97,7 @@ if stimparam.LEST || stimparam.REST
     %prepare audio buffer
     PsychPortAudio('FillBuffer',pahandle,stimdata');
     
-    if prompt
+    if prompt && ispc && ~strcmp(outdevice,'base')
         mb_handle = msgbox({'Ensure that:','','-  Inset earphone jack is connected to the Terratec box, NOT the laptop',...
             '- "Waveplay 1/2" volume in the panel below is set to -18dB'},mfilename,'warn');
         boxpos = get(mb_handle,'Position');
@@ -166,6 +184,9 @@ for run = 1:numruns
         if stimparam.LEST || stimparam.REST
             %start sound
             starttime = PsychPortAudio('Start',pahandle,1,0,1);
+            if starttime == 0
+                starttime = GetSecs;
+            end
             stoptime = starttime + sweepon;
         end
         

@@ -1,4 +1,4 @@
-function [stat,cond1data,cond2data,fidx,chanidx] = fttest(EEG,condlist,foi,alpha,doplot)
+function [stat,cond1data,cond2data,fidx,chanidx] = fttest(EEG,foi,alpha,doplot)
 
 loadpaths
 
@@ -8,21 +8,10 @@ elseif ~isnumeric(alpha) || length(alpha) > 1
     error('Alpha level must be a numeric scalar');
 end
 
-if iscell(condlist)
-    if length(condlist) ~= 2
-        error('List of conditions must be a cell array of two conditions.');
-    else
-        cond1 = condlist{1};
-        cond2 = condlist{2};
-        ttesttype = 0;
-        ttestalpha = alpha/2;
-    end
-else
-    cond1 = condlist;
-    cond2 = 'baseline';
-    ttesttype = 1;
-    ttestalpha = alpha;
-end
+cond1 = 'stimulation';
+cond2 = 'baseline';
+ttesttype = 1;
+ttestalpha = alpha;
 
 if ~isnumeric(foi) || length(foi) > 2
     error('Frequency of interest must be a numeric scalar or range.');
@@ -39,49 +28,11 @@ if ischar(EEG)
 end
 
 chanlocs = EEG.chanlocs;
+cond1data = EEG;
 
-%% select epochs for condition 1
-evtype = EEG.condition{strcmp(cond1,EEG.condition(:,1)),2};
-cond1epochs = zeros(length(EEG.epoch),1);
-
-for e = 1:length(EEG.epoch)
-    epochevents = EEG.epoch(e).eventtype(cell2mat(EEG.epoch(e).eventlatency) == 0);
-    for ce=1:length(epochevents)
-        if sum(strcmp(epochevents{ce},evtype)) > 0
-            cond1epochs(e) = true;
-        end
-    end
-end
-cond1epochs = find(cond1epochs);
-fprintf('%s: found %d matching epochs to keep.\n',cond1,length(cond1epochs));
-cond1data = pop_select(EEG,'trial',cond1epochs);
-
-%% select epochs for condition 2
-if strcmp(cond2,'baseline')
-
-    cond2data = pop_select(cond1data,'time',[cond1data.xmin 0]);
-    cond1data = pop_select(cond1data,'time',[0 cond1data.xmax]);
-    
-else
-    
-    evtype = EEG.condition{strcmp(cond2,EEG.condition(:,1)),2};
-    cond2epochs = zeros(length(EEG.epoch),1);
-    
-    for e = 1:length(EEG.epoch)
-        epochevents = EEG.epoch(e).eventtype(cell2mat(EEG.epoch(e).eventlatency) == 0);
-        for ce=1:length(epochevents)
-            if sum(strcmp(epochevents{ce},evtype)) > 0
-                cond2epochs(e) = true;
-            end
-        end
-    end
-    cond2epochs = find(cond2epochs);
-    fprintf('\n%s: found %d matching epochs to keep.\n',cond2,length(cond2epochs));
-    cond2data = pop_select(EEG,'trial',cond2epochs);
-    
-    cond1data = pop_select(cond1data,'time',[0 cond1data.xmax]);
-    cond2data = pop_select(cond2data,'time',[0 cond2data.xmax]);
-end
+%% select baseline
+cond2data = pop_select(cond1data,'time',[cond1data.xmin 0]);
+cond1data = pop_select(cond1data,'time',[0 cond1data.xmax]);
 
 %% prepare for fieldtrip
 
@@ -93,13 +44,13 @@ cond2data = convertoft(cond2data);
 if size(cond1data.trial{1},2) > size(cond2data.trial{1},2)
     padlen = size(cond1data.trial{1},2)/cond1data.fsample;
     fprintf('Padding out %s to %.1f sec.\n',cond2,padlen);
-
+    
     cond1data = calcmft(cond1data);
     cond2data = calcmft(cond2data,padlen);
 elseif size(cond1data.trial{1},2) < size(cond2data.trial{1},2)
     padlen = size(cond2data.trial{1},2)/cond2data.fsample;
     fprintf('Padding out %s to %.1f sec.\n',cond1,padlen);
-
+    
     cond1data = calcmft(cond1data,padlen);
     cond2data = calcmft(cond2data);
 else
@@ -111,11 +62,13 @@ if sum(~(cond1data.freq == cond2data.freq)) > 0
     error('Frequency bins of conditions are not identical!');
 end
 
-frange = find(abs(cond1data.freq-foi(1)) == min(abs(cond1data.freq-foi(1)))):...
-    find(abs(cond1data.freq-foi(end)) == min(abs(cond1data.freq-foi(end))));
-
-[dummy,maxidx] = max(max( cond1data.meanpwr(:,frange)-cond2data.meanpwr(:,frange), [],1));
-fidx = frange(1)-1+maxidx;
+if length(foi) == 1
+    fidx = find(abs(cond1data.freq-foi) == min(abs(cond1data.freq-foi)));
+elseif length(foi) == 2
+    frange = find(cond1data.freq >= foi(1) & cond1data.freq <= foi(2));
+    [dummy,maxidx] = max(max( cond1data.meanpwr(:,frange)-cond2data.meanpwr(:,frange), [],1));
+    fidx = frange(1)-1+maxidx;
+end
 
 %% fieldtrip statistical analysis
 cfg = [];
@@ -194,7 +147,7 @@ title('Power');
 % topoplot(stat.stat,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','labels','pmask',stat.mask);
 % colorbar
 % title('Test Statistic');
-% 
+%
 % subplot(1,3,3);
 % topoplot(1-stat.prob,stat.chanlocs, 'maplimits', [1-ttestalpha 1], 'electrodes','labels','pmask',stat.mask);
 % h = colorbar; set(h,'YTick',[1-ttestalpha 1],'YTickLabel',{num2str(ttestalpha),'0'});
@@ -225,12 +178,12 @@ while true
             hold off;
         end
     end
-
+    
     dlgopt.Resize='on';
     dlgopt.WindowStyle='normal';
     answers = inputdlg({'Enter channel to FFT:','Enter amplitude range to plot:'},...
         mfilename,1,{'','0 0.2'},dlgopt);
-
+    
     if isempty(answers)
         break;
     end
@@ -267,5 +220,4 @@ if exist('padlen','var')
 end
 
 EEG = ft_freqanalysis(cfg,EEG);
-%EEG.powspctrm = abs(EEG.fourierspctrm).^2;
 EEG.meanpwr = squeeze(mean(EEG.powspctrm,1));

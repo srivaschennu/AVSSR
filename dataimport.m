@@ -11,20 +11,6 @@ end
 mfffiles = filenames(logical(cell2mat({filenames.isdir})));
 if length(mfffiles) > 1
     error('Expected 1 MFF recording file. Found %d.\n',length(mfffiles));
-
-elseif isempty(mfffiles)
-    % check for and import NSF file
-    if length(filenames) ~= 1
-        error('Expected 1 NSF recording file. Found %d.\n',length(filenames));
-    else
-        filename = filenames.name;
-        fprintf('\nProcessing %s.\n\n', filename);
-        EEG = pop_readegi(sprintf('%s%s', filepath, filename));
-        for e = 1:length(EEG.event)
-            EEG.event(e).codes = {'DUMM',0};
-        end
-    end
-    
 else
     filename = mfffiles.name;
     fprintf('\nProcessing %s.\n\n', filename);
@@ -50,7 +36,7 @@ if EEG.srate > 250
 end
 
 %Filter
-hpfreq = 0.5;
+hpfreq = 1;
 lpfreq = 95;
 fprintf('Low-pass filtering below %.1fHz...\n',lpfreq);
 EEG = pop_eegfilt(EEG, 0, lpfreq, [], [0], 0, 0, 'fir1', 0);
