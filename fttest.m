@@ -106,8 +106,14 @@ cfg.feedback = 'textbar';
 
 [stat] = ft_freqstatistics(cfg, cond1data, cond2data);
 
-stat.diffcond = cond1data.meanpwr(:,fidx) - cond2data.meanpwr(:,fidx);
+stat.diffcond = cond1data.meanpwr - cond2data.meanpwr;
 stat.chanlocs = chanlocs;
+
+if isfield(stat,'posclusters')
+    for p = 1:length(stat.posclusters)
+        fprintf('Cluster %d: t = %.2f, p = %.3f\n', p, stat.posclusters(p).clusterstat, stat.posclusters(p).prob);
+    end
+end
 
 if sum(stat.mask) > 0
     
@@ -137,11 +143,11 @@ figure('Name',mfilename,'Color','white');
 % set(gcf,'Position',figpos);
 
 % subplot(1,3,1);
-plotvals = stat.diffcond;
+plotvals = stat.diffcond(:,fidx);
 plotvals(~stat.mask) = 0;
 topoplot(plotvals,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','labels','pmask',stat.mask);
 colorbar
-title('Power');
+title(sprintf('Power @ %.1fHz',cfg.frequency(1)));
 
 % subplot(1,3,2);
 % topoplot(stat.stat,stat.chanlocs, 'maplimits', 'absmax', 'electrodes','labels','pmask',stat.mask);
@@ -220,4 +226,17 @@ if exist('padlen','var')
 end
 
 EEG = ft_freqanalysis(cfg,EEG);
+
+% %% added by Damian to normalise power by the two surrounding bins since we should have a peak not a broadband splodge
+% EEGsmooth = EEG.powspctrm;
+% 
+% for fq = 2:size(EEG.powspctrm,3)-1
+%     for fqch = 1:size(EEG.powspctrm,1)
+%         EEGsmooth(fqch,:,fq) = EEG.powspctrm(fqch,:,fq) - mean([EEG.powspctrm(fqch,:,fq-1); EEG.powspctrm(fqch,:,fq+1)]);
+%     end
+% end
+%         
+% EEG.powspctrm = EEGsmooth;
+% %%
+
 EEG.meanpwr = squeeze(mean(EEG.powspctrm,1));

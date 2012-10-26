@@ -21,6 +21,7 @@ switch sweepcode
         EEG = pop_epoch( EEG, {'STRT'}, [-7 13]);
     case 2
         EEG = pop_epoch( EEG, {'TRIG'}, [0 1]);
+        doica = true;
 end
 
 EEG = pop_rmbase(EEG,[],[2 EEG.pnts]);
@@ -55,6 +56,7 @@ if ischar(basename)
             EEG.icaweights = oldEEG.icaweights;
             EEG.icachansind = oldEEG.icachansind;
             EEG.reject.gcompreject = oldEEG.reject.gcompreject;
+            EEG.rejchan = oldEEG.rejchan;
         end
     end
     
