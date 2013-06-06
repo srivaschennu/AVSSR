@@ -60,29 +60,29 @@ if stimparam.LEST || stimparam.REST
         if ~isempty(audiodevices)
             %DMX audio
             outdevice = strcmp('DMX 6Fire USB ASIO Driver',{audiodevices.DeviceName});
-            hd.outdevice = 2;
+            hd.outdevice = 'dmx';
         else
             %Windows default audio
             audiodevices = PsychPortAudio('GetDevices',2);
             outdevice = strcmp('Microsoft Sound Mapper - Output',{audiodevices.DeviceName});
-            hd.outdevice = 3;
+            hd.outdevice = 'base';
         end
     elseif ismac
         audiodevices = PsychPortAudio('GetDevices');
         %DMX audio
         outdevice = strcmp('TerraTec DMX 6Fire USB',{audiodevices.DeviceName});
-        hd.outdevice = 2;
+        hd.outdevice = 'dmx';
         if sum(outdevice) ~= 1
             %Mac default audio
             audiodevices = PsychPortAudio('GetDevices');
             outdevice = strcmp('Built-in Output',{audiodevices.DeviceName});
-            hd.outdevice = 1;
+            hd.outdevice = 'base';
         end
     else
         error('Unsupported OS platform!');
     end
     
-    pahandle = PsychPortAudio('Open',audiodevices(outdevidx).DeviceIndex,[],[],f_sample,2);
+    pahandle = PsychPortAudio('Open',audiodevices(outdevice).DeviceIndex,[],[],f_sample,2);
     
     %construct amplitude modulated wave for left ear
     if stimparam.LEST == 1
@@ -106,7 +106,7 @@ if stimparam.LEST || stimparam.REST
     %prepare audio buffer
     PsychPortAudio('FillBuffer',pahandle,stimdata');
     
-    if prompt && ispc && ~strcmp(outdevice,'base')
+    if prompt && ispc && ~strcmp(hd.outdevice,'base')
         mb_handle = msgbox({'Ensure that:','','-  Inset earphone jack is connected to the Terratec box, NOT the laptop',...
             '- "Waveplay 1/2" volume in the panel below is set to -18dB'},mfilename,'warn');
         boxpos = get(mb_handle,'Position');
