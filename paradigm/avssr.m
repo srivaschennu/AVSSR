@@ -108,7 +108,7 @@ if stimparam.LEST || stimparam.REST
     
     if prompt && ispc && ~strcmp(hd.outdevice,'base')
         mb_handle = msgbox({'Ensure that:','','-  Inset earphone jack is connected to the Terratec box, NOT the laptop',...
-            '- "Waveplay 1/2" volume in the panel below is set to -18dB'},mfilename,'warn');
+            '- "Waveplay 1/2" volume in the panel below is set to -8dB'},mfilename,'warn');
         boxpos = get(mb_handle,'Position');
         set(mb_handle,'Position',[boxpos(1) boxpos(2)+125 boxpos(3) boxpos(4)]);
         system('C:\Program Files\TerraTec\DMX6FireUSB\DMX6FireUSB.exe');
