@@ -112,6 +112,7 @@ stat.chanlocs = chanlocs;
 if isfield(stat,'posclusters')
     for p = 1:length(stat.posclusters)
         fprintf('Cluster %d: t = %.2f, p = %.3f\n', p, stat.posclusters(p).clusterstat, stat.posclusters(p).prob);
+        fprintf('Channels: %s\n', cell2str({stat.chanlocs(logical(stat.posclusterslabelmat)).labels}));
     end
 end
 

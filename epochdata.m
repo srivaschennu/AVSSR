@@ -22,6 +22,8 @@ switch sweepcode
     case 2
         EEG = pop_epoch( EEG, {'TRIG'}, [0 1]);
         doica = true;
+    otherwise
+        error('Unrecognised epoch length!');
 end
 
 EEG = pop_rmbase(EEG,[],[2 EEG.pnts]);
@@ -47,7 +49,9 @@ if ischar(basename)
                 if ismember({EEG.chanlocs(c).labels},{oldEEG.chanlocs.labels})
                     keepchan = [keepchan c];
                 end
+                EEG.chanlocs(c).badchan = 0;
             end
+            rejchan = EEG.chanlocs(setdiff(1:length(EEG.chanlocs),keepchan));
             EEG = pop_select(EEG,'channel',keepchan);
             
             EEG.icaact = oldEEG.icaact;
@@ -56,7 +60,11 @@ if ischar(basename)
             EEG.icaweights = oldEEG.icaweights;
             EEG.icachansind = oldEEG.icachansind;
             EEG.reject.gcompreject = oldEEG.reject.gcompreject;
-            EEG.rejchan = oldEEG.rejchan;
+            if isfield('oldEEG','rejchan')
+                EEG.rejchan = oldEEG.rejchan;
+            else
+                EEG.rejchan = rejchan;
+            end
         end
     end
     
