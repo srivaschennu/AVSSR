@@ -5,7 +5,7 @@ loadpaths
 keepica = true;
 
 if ~exist('doica','var') || isempty(doica)
-    doica = false;
+    doica = true;
 end
 
 if ischar(basename)
@@ -19,7 +19,7 @@ fprintf('Epoching and baselining.\n');
 switch sweepcode
     case 1
         EEG = pop_epoch( EEG, {'STRT'}, [-7 13]);
-    case 2
+    case 4
         EEG = pop_epoch( EEG, {'TRIG'}, [0 1]);
         doica = true;
     otherwise
