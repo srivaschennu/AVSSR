@@ -196,7 +196,7 @@ while true
     end
     
     channame = answers{1};
-    ylim = str2double(answers{2});
+    ylim = str2num(answers{2});
     
     chanidx = find(strcmpi(channame,cond1data.label));
 end
