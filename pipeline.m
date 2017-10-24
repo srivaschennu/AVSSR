@@ -2,11 +2,11 @@ function pipeline(basename)
 
 loadpaths
 
-dataimport(basename);
-epochdata(basename,4);
-rejartifacts([basename '_epochs'],1,4);
-computeic([basename '_epochs']);
-epochdata(basename,1);
+% dataimport(basename);
+% epochdata(basename,4);
+% rejartifacts([basename '_epochs'],1,4);
+% computeic([basename '_epochs']);
+% epochdata(basename,1);
 rejectic(basename);
 rejartifacts([basename '_clean'],2,4);
 rereference(basename,3);
